@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useHistory } from "react-router-dom";
+import { Event } from "../constants/event";
+import { useDispatch, useListener } from "../effects/use-event";
 import useQueryParams from "../effects/use-query-params";
 
 function TodoList() {
@@ -11,10 +13,33 @@ function TodoList() {
 
     const history = useHistory();
     const query = useQueryParams();
-    const [selectedItemId, setSelectedItemId] = useState(parseInt(query.listId, 10));    
+    const dispatcher = useDispatch();
+    useListener(Event.LIST_UPDATED, useCallback((listId, listName) => {
+        setTodoLists(todoLists.map((list) => {
+            if (list.id == listId) {
+                list.name = listName;
+            }
+            return {...list};
+        }))
+    }, [todoLists]));
+
+    useListener(Event.LIST_CREATED, useCallback((list) => {
+        // todo: remove once api calls are ready
+        list.id = parseInt(todoLists[todoLists.length-1].id, 10) + 1;
+        setTodoLists(todoLists.concat(list));
+    }, [todoLists]));
+
+    function onDeleteClicked(e, listId) {
+        e.preventDefault();
+        e.stopPropagation();
+        setTodoLists(todoLists.filter(list => list.id != listId));
+        dispatcher(Event.LIST_DELETED, listId);
+        if (listId == query.listId) {
+            history.push('/');
+        }
+    }
 
     function onItemSelected(itemId) {
-        setSelectedItemId(itemId);
         history.push({
             pathname: '/',
             search: `?listId=${encodeURIComponent(itemId)}`
@@ -32,9 +57,15 @@ function TodoList() {
                     return <li
                             key={item.id}
                             title={item.name} 
-                            className={`transition-all duration-200 ease-linear overflow-hidden whitespace-nowrap overflow-ellipsis mt-2 px-4 py-2 text-lg cursor-pointer border-2 border-transparent rounded-3xl border-solid hover:border-green-400 ${item.id === selectedItemId ? 'hover:border-green-400 bg-green-400 text-white' : ''}`}
+                            className={`group flex gap-2 items-start transition-all duration-200 ease-linear overflow-hidden whitespace-nowrap overflow-ellipsis mt-2 pl-4 pr-1 py-2 text-md cursor-pointer border-2 border-transparent rounded-3xl border-solid hover:border-green-400 ${item.id == query.listId ? 'hover:border-green-400 bg-green-400 text-white' : ''}`}
                             onClick={() => onItemSelected(item.id)}
-                        >{item.name}</li>;
+                        >
+                        <p className="flex-grow whitespace-nowrap overflow-ellipsis overflow-hidden">{item.name}</p>
+                        <div className="flex-grow-0 flex-shrink-0 w-6 h-6 self-center transform translate-x-7 transition-all group-hover:translate-x-0">
+                            <a href="#" onClick={(e) => onDeleteClicked(e, item.id)}><i className={"fas fa-trash text-red-800"}></i></a>
+                        </div>
+                        </li>;
+
                 })}
             </ul>
         </div>

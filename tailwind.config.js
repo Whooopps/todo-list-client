@@ -8,11 +8,19 @@ module.exports = {
       },
       width: {
         "sidebar": '250px',
+      },
+      translate: {
+        '2x': '200%',
       }
     },
   },
   variants: {
-    extend: {},
+    extend: {
+      backgroundColor: ['disabled'],
+      textColor: ['disabled'],
+      translate: ['group-hover'],
+      opacity: ['group-hover'],
+    },
   },
   plugins: [],
 }

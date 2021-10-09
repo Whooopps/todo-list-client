@@ -3,6 +3,7 @@ import { Fragment } from "react/cjs/react.production.min";
 import { Event } from "../constants/event";
 import { useEditable } from "../effects/use-editable";
 import { useDispatch } from "../effects/use-event";
+import { alertConfirm } from "../util/confirm-alert";
 
 function TodoListItem({ id, name, completed, isNew, shouldFocus = true }) {
   const [checked, setChecked] = useState(completed);
@@ -63,7 +64,10 @@ function TodoListItem({ id, name, completed, isNew, shouldFocus = true }) {
   }
   function onDeleteClicked(e) {
     e.preventDefault();
-    dispatcher(Event.LIST_ITEM_DELETED, id);
+    alertConfirm((onClose) => {
+      dispatcher(Event.LIST_ITEM_DELETED, id);
+      onClose();
+    });
   }
   return (
     <div className="bg-white rounded px-3 py-5 w-full mb-4 shadow-sm group">

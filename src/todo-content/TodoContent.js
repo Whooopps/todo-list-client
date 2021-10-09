@@ -5,6 +5,7 @@ import { useEditable } from "../effects/use-editable";
 import { useDispatch, useListener } from "../effects/use-event";
 import useQueryParams from "../effects/use-query-params";
 import TodoListItem from "../todo-list-item/TodoListItem";
+import { alertConfirm } from "../util/confirm-alert";
 
 function TodoContent() {
   const query = useQueryParams();
@@ -65,7 +66,7 @@ function TodoContent() {
   }, [query.listId, cancelEditing]);
 
   useEffect(() => {
-    if (location.state?.isNew) {
+    if (query.listId && location.state?.isNew) {
       startEditing();
     }
   }, [startEditing, query.listId, location.state?.isNew]);
@@ -147,7 +148,12 @@ function TodoContent() {
     useCallback(
       (list) => {
         // todo: remove once api call is ready
-        list.id = parseInt(Object.keys(items).pop(), 10) + 1;
+        const keys = Object.keys(items);
+        if (keys.length > 0) {
+          list.id = parseInt(keys.pop(), 10) + 1;
+        } else {
+          list.id = 1;
+        }
         setItems({
           ...items,
           [list.id]: {
@@ -192,12 +198,28 @@ function TodoContent() {
   }
 
   function clearAll() {
-    setItems({
-      ...items,
-      [query.listId]: {
-        ...items[query.listId],
-        items: [],
-      },
+    alertConfirm((onClose) => {
+      setItems({
+        ...items,
+        [query.listId]: {
+          ...items[query.listId],
+          items: [],
+        },
+      });
+      onClose();
+    });
+  }
+
+  function clearCompleted() {
+    alertConfirm((onClose) => {
+      setItems({
+        ...items,
+        [query.listId]: {
+          ...items[query.listId],
+          items: items[query.listId].items.filter((item) => !item.completed),
+        },
+      });
+      onClose();
     });
   }
 
@@ -224,11 +246,19 @@ function TodoContent() {
               <div className="text-right mb-6">
                 <button
                   className={
-                    "bg-red-500 text-white rounded text-center px-5 py-1.5 disabled:bg-red-200"
+                    "bg-red-500 text-white rounded text-center px-5 py-1.5 disabled:bg-red-200 text-sm"
                   }
                   onClick={clearAll}
                 >
                   <i className="fas fa-trash mr-2"></i>Clear All
+                </button>
+                <button
+                  className={
+                    "bg-red-500 text-white rounded text-center px-5 py-1.5 disabled:bg-red-200 ml-2 text-sm"
+                  }
+                  onClick={clearCompleted}
+                >
+                  <i className="fas fa-trash mr-2"></i>Clear Completed
                 </button>
               </div>
             ) : null}

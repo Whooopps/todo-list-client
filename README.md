@@ -1,6 +1,8 @@
-# ToDo Lists
+# ToDo Lists Client
 
 Another todos project created with [Create React App](https://github.com/facebook/create-react-app) and Tailwind CSS to learn about React and Tailwind.
+
+Server implementation available here: https://github.com/Whooopps/todo-list-server
 
 ## Available Scripts
 

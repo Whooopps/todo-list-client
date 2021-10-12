@@ -1,11 +1,14 @@
 import { useCallback, useState } from "react";
 import { Fragment } from "react/cjs/react.production.min";
 import { Event } from "../constants/event";
+import { useAxios } from "../effects/use-axios";
 import { useEditable } from "../effects/use-editable";
 import { useDispatch } from "../effects/use-event";
 import { alertConfirm } from "../util/confirm-alert";
 
 function TodoListItem({ id, name, completed, isNew, shouldFocus = true }) {
+  const axios = useAxios();
+  const [isLoading, setIsLoading] = useState(true);
   const [checked, setChecked] = useState(completed);
   const [newItemText, setNewItemText] = useState("");
   const [isAddingItem, setIsAddingItem] = useState(false);
@@ -69,58 +72,64 @@ function TodoListItem({ id, name, completed, isNew, shouldFocus = true }) {
       onClose();
     });
   }
+
+  function remder() {
+    return;
+  }
   return (
-    <div className="bg-white rounded px-3 py-5 w-full mb-4 shadow-sm group">
-      <div className="flex items-start overflow-hidden">
-        {isNew ? (
-          <Fragment>
-            <div className="mr-4 w-6 h-6 flex-grow-0 flex-shrink-0"></div>
-            <input
-              ref={newItemInputRef}
-              className={`w-full text-lg outline-none border-b border-solid border-gray-300 pb-1 disabled:text-gray-400 disabled:bg-transparent`}
-              placeholder="New item..."
-              value={newItemText}
-              onChange={(e) => setNewItemText(e.target.value)}
-              onBlur={addItem}
-              onKeyUp={onKeyUp}
-              disabled={isAddingItem}
-            />
-          </Fragment>
-        ) : (
-          <Fragment>
-            <input
-              className="mr-4 w-6 h-6 flex-grow-0 flex-shrink-0 self-center outline-none"
-              type="checkbox"
-              checked={checked}
-              onChange={toggleChecked}
-            />
-            {isEditing ? (
+    <>
+      <div className="bg-white rounded px-3 py-5 w-full mb-4 shadow-sm group">
+        <div className="flex items-start overflow-hidden">
+          {isNew ? (
+            <Fragment>
+              <div className="mr-4 w-6 h-6 flex-grow-0 flex-shrink-0"></div>
               <input
-                {...bindInput}
-                ref={ref}
-                className="w-full text-lg outline-none border-b border-solid border-gray-300 pb-1 disabled:text-gray-400 disabled:bg-transparent"
+                ref={newItemInputRef}
+                className={`w-full text-lg outline-none border-b border-solid border-gray-300 pb-1 disabled:text-gray-400 disabled:bg-transparent`}
+                placeholder="New item..."
+                value={newItemText}
+                onChange={(e) => setNewItemText(e.target.value)}
+                onBlur={addItem}
+                onKeyUp={onKeyUp}
+                disabled={isAddingItem}
               />
-            ) : (
-              <Fragment>
-                <p
-                  className={`text-lg flex-grow ${
-                    checked ? "line-through" : ""
-                  }`}
-                  {...bindEl}
-                >
-                  {value}
-                </p>
-                <div className="flex-grow-0 flex-shrink-0 w-6 h-6 self-center transform translate-x-2x transition-all group-hover:translate-x-0">
-                  <a href="#" onClick={onDeleteClicked}>
-                    <i className={"fas fa-trash text-red-800"}></i>
-                  </a>
-                </div>
-              </Fragment>
-            )}
-          </Fragment>
-        )}
+            </Fragment>
+          ) : (
+            <Fragment>
+              <input
+                className="mr-4 w-6 h-6 flex-grow-0 flex-shrink-0 self-center outline-none"
+                type="checkbox"
+                checked={checked}
+                onChange={toggleChecked}
+              />
+              {isEditing ? (
+                <input
+                  {...bindInput}
+                  ref={ref}
+                  className="w-full text-lg outline-none border-b border-solid border-gray-300 pb-1 disabled:text-gray-400 disabled:bg-transparent"
+                />
+              ) : (
+                <Fragment>
+                  <p
+                    className={`text-lg flex-grow ${
+                      checked ? "line-through" : ""
+                    }`}
+                    {...bindEl}
+                  >
+                    {value}
+                  </p>
+                  <div className="flex-grow-0 flex-shrink-0 w-6 h-6 self-center transform translate-x-2x transition-all group-hover:translate-x-0">
+                    <a href="#" onClick={onDeleteClicked}>
+                      <i className={"fas fa-trash text-red-800"}></i>
+                    </a>
+                  </div>
+                </Fragment>
+              )}
+            </Fragment>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

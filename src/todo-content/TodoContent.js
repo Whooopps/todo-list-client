@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router";
 import { Event } from "../constants/event";
+import { useAxios } from "../effects/use-axios";
 import { useEditable } from "../effects/use-editable";
 import { useDispatch, useListener } from "../effects/use-event";
 import useQueryParams from "../effects/use-query-params";
@@ -8,6 +9,7 @@ import TodoListItem from "../todo-list-item/TodoListItem";
 import { alertConfirm } from "../util/confirm-alert";
 
 function TodoContent() {
+  const axios = useAxios();
   const query = useQueryParams();
   const location = useLocation();
   const [items, setItems] = useState({

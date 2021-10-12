@@ -1,20 +1,32 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { Event } from "../constants/event";
+import { useAxios } from "../effects/use-axios";
 import { useDispatch, useListener } from "../effects/use-event";
 import useQueryParams from "../effects/use-query-params";
+import { Loader } from "../loader/Loader";
 import { alertConfirm } from "../util/confirm-alert";
 
 function TodoList() {
-  const [todoLists, setTodoLists] = useState([
-    { id: 1, name: "Shopping list" },
-    { id: 2, name: "Trip packing" },
-    { id: 3, name: "School work" },
-  ]);
+  const axios = useAxios();
+  const [isLoading, setIsLoading] = useState(true);
+  const [todoLists, setTodoLists] = useState([]);
 
   const history = useHistory();
   const query = useQueryParams();
   const dispatcher = useDispatch();
+
+  useEffect(async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get("/api/v1/todo-list");
+      setTodoLists(response.data);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
   useListener(
     Event.LIST_UPDATED,
     useCallback(
@@ -70,47 +82,62 @@ function TodoList() {
     });
   }
 
+  function renderNoData() {
+    return (
+      <p className="mt-4 text-sm text-gray-500">
+        No lists found. Please create one.
+      </p>
+    );
+  }
+  function renderList() {
+    return (
+      <>
+        <div className="relative">
+          <input
+            className="pl-9 pt-2 pb-2 border-b border-solid rounded-full w-full outline-none"
+            placeholder="Search"
+          />
+          <i className="fas fa-search absolute left-3 top-3"></i>
+        </div>
+        <ul className="mt-4">
+          {todoLists.map((item) => {
+            return (
+              <li
+                key={item.id}
+                title={item.name}
+                className={`group flex gap-2 items-start transition-all duration-200 ease-linear overflow-hidden whitespace-nowrap overflow-ellipsis mt-2 pl-4 pr-1 py-2 text-md cursor-pointer border-2 border-transparent rounded-3xl border-solid hover:border-green-400 ${
+                  item.id == query.listId
+                    ? "hover:border-green-400 bg-green-400 text-white"
+                    : ""
+                }`}
+                onClick={() => onItemSelected(item.id)}
+              >
+                <p className="flex-grow whitespace-nowrap overflow-ellipsis overflow-hidden">
+                  {item.name}
+                </p>
+                <div className="flex-grow-0 flex-shrink-0 w-6 h-6 self-center transform translate-x-7 transition-all group-hover:translate-x-0">
+                  <a href="#" onClick={(e) => onDeleteClicked(e, item.id)}>
+                    <i className={"fas fa-trash text-red-800"}></i>
+                  </a>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </>
+    );
+  }
+
   return (
     <div className="px-4">
-      {todoLists.length === 0 ? (
-        <p className="mt-4 text-sm text-gray-500">
-          No lists found. Please create one.
-        </p>
+      {isLoading ? (
+        <div className="text-center">
+          <Loader />
+        </div>
+      ) : todoLists.length === 0 ? (
+        renderNoData()
       ) : (
-        <>
-          <div className="relative">
-            <input
-              className="pl-9 pt-2 pb-2 border-b border-solid rounded-full w-full outline-none"
-              placeholder="Search"
-            />
-            <i className="fas fa-search absolute left-3 top-3"></i>
-          </div>
-          <ul className="mt-4">
-            {todoLists.map((item) => {
-              return (
-                <li
-                  key={item.id}
-                  title={item.name}
-                  className={`group flex gap-2 items-start transition-all duration-200 ease-linear overflow-hidden whitespace-nowrap overflow-ellipsis mt-2 pl-4 pr-1 py-2 text-md cursor-pointer border-2 border-transparent rounded-3xl border-solid hover:border-green-400 ${
-                    item.id == query.listId
-                      ? "hover:border-green-400 bg-green-400 text-white"
-                      : ""
-                  }`}
-                  onClick={() => onItemSelected(item.id)}
-                >
-                  <p className="flex-grow whitespace-nowrap overflow-ellipsis overflow-hidden">
-                    {item.name}
-                  </p>
-                  <div className="flex-grow-0 flex-shrink-0 w-6 h-6 self-center transform translate-x-7 transition-all group-hover:translate-x-0">
-                    <a href="#" onClick={(e) => onDeleteClicked(e, item.id)}>
-                      <i className={"fas fa-trash text-red-800"}></i>
-                    </a>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </>
+        renderList()
       )}
     </div>
   );

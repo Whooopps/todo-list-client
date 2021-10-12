@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export function useEditable(initialValue, onEdit) {
+export function useEditable(initialValue, onEdit, canEdit = true) {
   const [value, setValue] = useState(initialValue);
   const [isEditing, setIsEditing] = useState(false);
   const ref = useRef();
 
   const startEditing = useCallback(() => {
+    if (!canEdit) return;
     setIsEditing(true);
   }, [setIsEditing]);
 
@@ -38,6 +39,10 @@ export function useEditable(initialValue, onEdit) {
       ref.current.select();
     }
   }, [isEditing]);
+
+  useEffect(() => {
+    if (!canEdit && isEditing) cancelEditing();
+  }, [canEdit]);
 
   return {
     ref,

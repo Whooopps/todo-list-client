@@ -74,8 +74,8 @@ function App() {
         position={positions.TOP_RIGHT}
         timeout={5000}
       >
-        <AxiosProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <AxiosProvider>
             <div className="App flex justify-center h-full w-full font-sans">
               <Switch>
                 <Route path="/signin">
@@ -103,8 +103,8 @@ function App() {
                 ></i>
               </button>
             </div>
-          </AuthProvider>
-        </AxiosProvider>
+          </AxiosProvider>
+        </AuthProvider>
       </AlertProvider>
     </Router>
   );

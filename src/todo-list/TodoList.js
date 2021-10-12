@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { Event } from "../constants/event";
 import { useAxios } from "../effects/use-axios";
@@ -11,6 +11,9 @@ function TodoList() {
   const axios = useAxios();
   const [isLoading, setIsLoading] = useState(true);
   const [todoLists, setTodoLists] = useState([]);
+  const [filteredTodoLists, setFilteredTodoLists] = useState([]);
+  const [searchText, setSearchText] = useState("");
+  const deletingRef = useRef(false);
 
   const history = useHistory();
   const query = useQueryParams();
@@ -44,27 +47,38 @@ function TodoList() {
     )
   );
 
+  useEffect(() => {
+    setFilteredTodoLists(
+      todoLists.filter((list) =>
+        list.name.toLowerCase().includes(searchText.toLowerCase())
+      )
+    );
+  }, [todoLists, searchText]);
+
   useListener(
     Event.LIST_CREATED,
     useCallback(
       (list) => {
-        // todo: remove once api calls are ready
-        if (todoLists.length > 0) {
-          list.id = parseInt(todoLists[todoLists.length - 1].id, 10) + 1;
-        } else {
-          list.id = 1;
-        }
-        setTodoLists(todoLists.concat(list));
+        setTodoLists((todoLists) => todoLists.concat(list));
       },
       [todoLists]
     )
   );
 
-  function onDeleteConfirmed(listId, onClose) {
-    setTodoLists(todoLists.filter((list) => list.id != listId));
-    dispatcher(Event.LIST_DELETED, listId);
-    if (listId == query.listId) {
-      history.push("/");
+  async function onDeleteConfirmed(listId, onClose) {
+    if (deletingRef.current) return;
+    try {
+      deletingRef.current = true;
+      await axios.delete(`/api/v1/todo-list/${listId}`);
+      setTodoLists(todoLists.filter((list) => list.id != listId));
+      dispatcher(Event.LIST_DELETED, listId);
+      if (listId == query.listId) {
+        history.push("/");
+      }
+    } catch (e) {
+      console.log(e);
+    } finally {
+      deletingRef.current = false;
     }
     onClose();
   }
@@ -96,11 +110,13 @@ function TodoList() {
           <input
             className="pl-9 pt-2 pb-2 border-b border-solid rounded-full w-full outline-none"
             placeholder="Search"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
           <i className="fas fa-search absolute left-3 top-3"></i>
         </div>
         <ul className="mt-4">
-          {todoLists.map((item) => {
+          {filteredTodoLists.map((item) => {
             return (
               <li
                 key={item.id}

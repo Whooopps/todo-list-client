@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Fragment } from "react/cjs/react.production.min";
 import { Event } from "../constants/event";
 import { useAxios } from "../effects/use-axios";
@@ -6,15 +6,24 @@ import { useEditable } from "../effects/use-editable";
 import { useDispatch } from "../effects/use-event";
 import { alertConfirm } from "../util/confirm-alert";
 
-function TodoListItem({ id, name, completed, isNew, shouldFocus = true }) {
+function TodoListItem({
+  id,
+  name,
+  completed,
+  isNew,
+  listId,
+  shouldFocus = true,
+}) {
   const axios = useAxios();
-  const [isLoading, setIsLoading] = useState(true);
   const [checked, setChecked] = useState(completed);
   const [newItemText, setNewItemText] = useState("");
   const [isAddingItem, setIsAddingItem] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const deleteRef = useRef(false);
   const { isEditing, ref, value, bindInput, bindEl } = useEditable(
     name,
-    editItem
+    editItem,
+    !isUpdating && !deleteRef.current
   );
   const dispatcher = useDispatch();
   const newItemInputRef = useCallback(
@@ -26,37 +35,54 @@ function TodoListItem({ id, name, completed, isNew, shouldFocus = true }) {
     [shouldFocus]
   );
 
-  function addItem() {
+  async function addItem() {
     if (isAddingItem || !newItemText.trim()) return;
     setIsAddingItem(true);
-    // fake api call delay
-    // todo: replace with actual api call
-    setTimeout(() => {
-      setIsAddingItem(false);
+    try {
+      const response = await axios.post(
+        `/api/v1/todo-list/${listId}/todo-list-item`,
+        {
+          name: newItemText,
+          completed: false,
+        }
+      );
+
       setNewItemText("");
-      dispatcher(Event.NEW_LIST_ITEM_ADDED, {
-        id,
-        name: newItemText,
-        completed: false,
-      });
-    }, 500);
+      dispatcher(Event.NEW_LIST_ITEM_ADDED, response.data);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setIsAddingItem(false);
+    }
+  }
+
+  async function updateItem(newName, newChecked) {
+    setIsUpdating(true);
+    try {
+      const response = await axios.put(
+        `/api/v1/todo-list/${listId}/todo-list-item/${id}`,
+        {
+          name: newName,
+          completed: newChecked,
+        }
+      );
+      dispatcher(Event.NEW_LIST_ITEM_UPDATED, response.data);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setIsUpdating(false);
+    }
   }
 
   function editItem(newName) {
-    dispatcher(Event.NEW_LIST_ITEM_UPDATED, {
-      id,
-      name: newName,
-      completed: checked,
-    });
+    if (newName !== name) {
+      updateItem(newName, checked);
+    }
   }
 
   function toggleChecked() {
     setChecked(!checked);
-    dispatcher(Event.NEW_LIST_ITEM_UPDATED, {
-      id,
-      name: value,
-      completed: !checked,
-    });
+    updateItem(name, !checked);
   }
   function onKeyUp(e) {
     switch (e.key) {
@@ -67,15 +93,21 @@ function TodoListItem({ id, name, completed, isNew, shouldFocus = true }) {
   }
   function onDeleteClicked(e) {
     e.preventDefault();
-    alertConfirm((onClose) => {
-      dispatcher(Event.LIST_ITEM_DELETED, id);
+    alertConfirm(async (onClose) => {
+      if (deleteRef.current) return;
+      deleteRef.current = true;
+      try {
+        await axios.delete(`/api/v1/todo-list/${listId}/todo-list-item/${id}`);
+        dispatcher(Event.LIST_ITEM_DELETED, id);
+      } catch (e) {
+        console.log(e);
+      } finally {
+        deleteRef.current = false;
+      }
       onClose();
     });
   }
 
-  function remder() {
-    return;
-  }
   return (
     <>
       <div className="bg-white rounded px-3 py-5 w-full mb-4 shadow-sm group">
@@ -97,10 +129,11 @@ function TodoListItem({ id, name, completed, isNew, shouldFocus = true }) {
           ) : (
             <Fragment>
               <input
-                className="mr-4 w-6 h-6 flex-grow-0 flex-shrink-0 self-center outline-none"
+                className="mr-4 w-6 h-6 flex-grow-0 flex-shrink-0 self-center outline-none disabled:opacity-20"
                 type="checkbox"
                 checked={checked}
                 onChange={toggleChecked}
+                disabled={isUpdating}
               />
               {isEditing ? (
                 <input

@@ -8,7 +8,6 @@ function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("");
-  const history = useHistory();
   const axios = useAxios();
   const setAuth = useSetAuth();
 

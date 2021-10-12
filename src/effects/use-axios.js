@@ -27,17 +27,18 @@ export function AxiosProvider({ children }) {
     instance.interceptors.response.use(
       (response) => response,
       (error) => {
-        console.log(error, error.response);
-        let message = "There was an error while processing your request.";
-        if (error.response) {
-          if (error.response.status === 401) {
-            setAuth(false);
+        if (!axios.isCancel(error)) {
+          let message = "There was an error while processing your request.";
+          if (error.response) {
+            if (error.response.status === 401) {
+              setAuth(false);
+            }
+            if (error.response.data.message) {
+              message = error.response.data.message;
+            }
           }
-          if (error.response.data.message) {
-            message = error.response.data.message;
-          }
+          alert.error(message);
         }
-        alert.error(message);
         return Promise.reject(error);
       }
     );

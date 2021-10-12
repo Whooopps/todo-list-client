@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useHistory } from "react-router";
-import { useSetAuth } from "../effects/use-auth";
+import { useAuthProtected, useSetAuth } from "../effects/use-auth";
 import { useAxios } from "../effects/use-axios";
 import { LoaderEllipsis } from "../loader/LoaderEllipsis";
 
@@ -10,6 +10,7 @@ function Header() {
   const [userName, setUserName] = useState("");
   const axios = useAxios();
   const setAuth = useSetAuth();
+  const isAuthenticated = useAuthProtected();
 
   function onHeaderClicked() {
     setIsOpen(!isOpen);
@@ -33,6 +34,7 @@ function Header() {
   }, []);
 
   useEffect(async () => {
+    if (!isAuthenticated) return;
     try {
       setIsLoading(true);
       const response = await axios.get("/api/v1/user/me");
@@ -42,7 +44,7 @@ function Header() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   async function logout() {
     await axios.post("/api/v1/auth/logout");

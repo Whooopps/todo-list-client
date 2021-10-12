@@ -2,6 +2,7 @@ import { CancelToken } from "axios";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import { Event } from "../constants/event";
+import { useAuthProtected } from "../effects/use-auth";
 import { useAxios } from "../effects/use-axios";
 import { useEditable } from "../effects/use-editable";
 import { useDispatch, useListener } from "../effects/use-event";
@@ -18,6 +19,7 @@ function TodoContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [items, setItems] = useState([]);
   const deleteRef = useRef(false);
+  const isAuthenticated = useAuthProtected();
 
   const currentListId = parseInt(query.listId, 10);
 
@@ -32,7 +34,7 @@ function TodoContent() {
   } = useEditable(listName, endHeaderEditing);
 
   useEffect(async () => {
-    if (!currentListId) return null;
+    if (!currentListId || !isAuthenticated) return null;
     setIsLoading(true);
     const source = CancelToken.source();
     try {
@@ -47,7 +49,7 @@ function TodoContent() {
       setIsLoading(false);
     }
     return () => source.cancel();
-  }, [currentListId]);
+  }, [currentListId, isAuthenticated]);
 
   useEffect(() => {
     cancelEditing();

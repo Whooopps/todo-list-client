@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { Event } from "../constants/event";
+import { useAuthProtected } from "../effects/use-auth";
 import { useAxios } from "../effects/use-axios";
 import { useDispatch, useListener } from "../effects/use-event";
 import useQueryParams from "../effects/use-query-params";
@@ -18,8 +19,10 @@ function TodoList() {
   const history = useHistory();
   const query = useQueryParams();
   const dispatcher = useDispatch();
+  const isAuthenticated = useAuthProtected();
 
   useEffect(async () => {
+    if (!isAuthenticated) return;
     try {
       setIsLoading(true);
       const response = await axios.get("/api/v1/todo-list");
@@ -29,7 +32,8 @@ function TodoList() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
+
   useListener(
     Event.LIST_UPDATED,
     useCallback(

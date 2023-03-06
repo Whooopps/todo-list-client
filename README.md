@@ -2,7 +2,7 @@
 
 Another todos project created with [Create React App](https://github.com/facebook/create-react-app) and Tailwind CSS to learn about React and Tailwind.
 
-Server implementation available here: https://github.com/Whooopps/todo-list-server
+Server implementation available here: https://github.com/suhaildhada/todo-list-server-nodejs
 
 ## Available Scripts
 
